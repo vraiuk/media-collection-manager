@@ -1,4 +1,4 @@
-type BadgeVariant = 'default' | 'uploading' | 'error' | 'success' | 'image' | 'video' | 'document'
+export type BadgeVariant = 'default' | 'uploading' | 'error' | 'success' | 'image' | 'video' | 'document'
 
 const variantClasses: Record<BadgeVariant, string> = {
   default: 'bg-surface text-text-muted',
