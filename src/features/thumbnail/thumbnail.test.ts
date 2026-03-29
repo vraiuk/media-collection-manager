@@ -1,7 +1,9 @@
 import { describe, it, expect, vi, afterEach } from 'vitest'
 import { generateImageThumb } from './generateImageThumb'
 
-// Mock OffscreenCanvas
+// Mock OffscreenCanvas — expose convertToBlob as a spy for per-test overrides
+const mockConvertToBlob = vi.fn(async () => new Blob(['fake-image'], { type: 'image/webp' }))
+
 class MockOffscreenCanvas {
   getContext() {
     return {
@@ -9,9 +11,7 @@ class MockOffscreenCanvas {
       fillRect: vi.fn(),
     }
   }
-  async convertToBlob() {
-    return new Blob(['fake-image'], { type: 'image/webp' })
-  }
+  convertToBlob = mockConvertToBlob
 }
 vi.stubGlobal('OffscreenCanvas', MockOffscreenCanvas)
 
@@ -28,7 +28,11 @@ vi.stubGlobal('URL', {
 })
 
 describe('generateImageThumb', () => {
-  afterEach(() => { createdUrls.length = 0 })
+  afterEach(() => {
+    createdUrls.length = 0
+    vi.mocked(createImageBitmap).mockClear()
+    mockConvertToBlob.mockClear()
+  })
 
   it('returns a blob URL on success', async () => {
     const file = new File(['x'], 'photo.jpg', { type: 'image/jpeg' })
@@ -45,7 +49,7 @@ describe('generateImageThumb', () => {
     expect(mockBitmap.close).toHaveBeenCalled()
   })
 
-  it('returns empty string and revokes URL when cancelled before generation', async () => {
+  it('returns empty string (no URL created) when cancelled before bitmap creation', async () => {
     const file = new File(['x'], 'photo.jpg', { type: 'image/jpeg' })
     const token = { cancelled: true }
     const url = await generateImageThumb(file, token)
@@ -53,12 +57,24 @@ describe('generateImageThumb', () => {
     expect(createdUrls).toHaveLength(0)
   })
 
-  it('revokes URL and returns empty string when cancelled after bitmap creation', async () => {
+  it('returns empty string when cancelled after bitmap resolves', async () => {
     const file = new File(['x'], 'photo.jpg', { type: 'image/jpeg' })
     const token = { cancelled: false }
     vi.mocked(createImageBitmap).mockImplementationOnce(async () => {
       token.cancelled = true
       return { width: 100, height: 100, close: vi.fn() }
+    })
+    const url = await generateImageThumb(file, token)
+    expect(url).toBe('')
+    expect(createdUrls).toHaveLength(0)
+  })
+
+  it('returns empty string (no URL created) when cancelled after convertToBlob resolves', async () => {
+    const file = new File(['x'], 'photo.jpg', { type: 'image/jpeg' })
+    const token = { cancelled: false }
+    mockConvertToBlob.mockImplementationOnce(async () => {
+      token.cancelled = true
+      return new Blob(['fake-image'], { type: 'image/webp' })
     })
     const url = await generateImageThumb(file, token)
     expect(url).toBe('')

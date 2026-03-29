@@ -10,7 +10,7 @@ export async function generateImageThumb(
   file: File,
   token: CancelToken,
 ): Promise<string> {
-  // Cache check (will be wired in Task 11; for now always miss)
+  // Cache check (will be wired in Task 12; for now always miss)
   const cached = await previewCache.get(file.name, file.size).catch(() => null)
   if (cached) return cached
 
