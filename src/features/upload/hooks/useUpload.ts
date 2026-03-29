@@ -54,7 +54,7 @@ export function useUpload() {
               dispatch(updateItem({ id, changes: { uploadStatus: 'done' } }))
             }
           } catch (err) {
-            if ((err as DOMException).name === 'AbortError') {
+            if (err instanceof Error && err.name === 'AbortError') {
               dispatch(setUploadStatus({ id, status: 'cancelled' }))
               dispatch(updateItem({ id, changes: { uploadStatus: 'cancelled' } }))
             } else {
@@ -92,13 +92,16 @@ export function useUpload() {
           dispatch(updateItem({ id, changes: { uploadStatus: 'done' } }))
         }
       } catch (err) {
-        if ((err as DOMException).name === 'AbortError') {
+        if (err instanceof Error && err.name === 'AbortError') {
           dispatch(setUploadStatus({ id, status: 'cancelled' }))
           dispatch(updateItem({ id, changes: { uploadStatus: 'cancelled' } }))
         } else {
-          dispatch(setUploadStatus({ id, status: 'error', error: (err as Error).message }))
+          const message = err instanceof Error ? err.message : 'Upload failed'
+          dispatch(setUploadStatus({ id, status: 'error', error: message }))
           dispatch(updateItem({ id, changes: { uploadStatus: 'error' } }))
         }
+      } finally {
+        uploadRuntime.cleanup(id)
       }
     },
     [dispatch],
