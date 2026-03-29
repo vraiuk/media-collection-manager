@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, afterEach } from 'vitest'
 import { generateImageThumb } from './generateImageThumb'
+import { generateVideoThumb } from './generateVideoThumb'
 
 // Mock OffscreenCanvas — expose convertToBlob as a spy for per-test overrides
 const mockConvertToBlob = vi.fn(async () => new Blob(['fake-image'], { type: 'image/webp' }))
@@ -79,5 +80,53 @@ describe('generateImageThumb', () => {
     const url = await generateImageThumb(file, token)
     expect(url).toBe('')
     expect(createdUrls).toHaveLength(0)
+  })
+})
+
+describe('generateVideoThumb', () => {
+  it('returns a blob URL on success', async () => {
+    const file = new File(['x'], 'clip.mp4', { type: 'video/mp4' })
+    const token = { cancelled: false }
+    // generateVideoThumb creates a video element — mock HTMLVideoElement
+    const mockVideo = {
+      src: '',
+      currentTime: 0,
+      remove: vi.fn(),
+      muted: false,
+      playsInline: false,
+      videoWidth: 640,
+      videoHeight: 480,
+      style: { display: '' },
+      load: vi.fn(),
+      addEventListener: vi.fn((event: string, cb: () => void) => {
+        if (event === 'loadeddata' || event === 'seeked') setTimeout(cb, 0)
+      }),
+      removeEventListener: vi.fn(),
+    }
+    vi.spyOn(document, 'createElement').mockReturnValueOnce(mockVideo as any)
+    vi.spyOn(document.body, 'appendChild').mockImplementationOnce(() => mockVideo as any)
+
+    // Mock canvas — second createElement call
+    const mockCtx = { drawImage: vi.fn() }
+    const mockCanvas = {
+      width: 0,
+      height: 0,
+      getContext: vi.fn(() => mockCtx),
+      toBlob: vi.fn((cb: (b: Blob | null) => void) =>
+        cb(new Blob(['fake-video-thumb'], { type: 'image/webp' })),
+      ),
+    }
+    vi.spyOn(document, 'createElement').mockReturnValueOnce(mockCanvas as any)
+
+    const url = await generateVideoThumb(file, token)
+    expect(url).toMatch(/^blob:/)
+    expect(mockVideo.remove).toHaveBeenCalled()
+  })
+
+  it('returns empty string and cleans up when cancelled', async () => {
+    const file = new File(['x'], 'clip.mp4', { type: 'video/mp4' })
+    const token = { cancelled: true }
+    const url = await generateVideoThumb(file, token)
+    expect(url).toBe('')
   })
 })
