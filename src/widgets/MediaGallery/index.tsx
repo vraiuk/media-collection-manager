@@ -1,6 +1,6 @@
 import { useCallback } from 'react'
 import { useAppDispatch, useAppSelector } from '@app/hooks'
-import { selectVisibleItems, selectLoadState, selectHasMore, removeItem, removeUploadJob, setFilterType, setSortBy } from '@entities/media'
+import { selectVisibleItems, selectLoadState, selectHasMore, removeItem, removeUploadJob } from '@entities/media'
 import { selectUploadById } from '@entities/media'
 import { store } from '@app/store'
 import { MediaCard } from '@features/gallery/components/MediaCard'
