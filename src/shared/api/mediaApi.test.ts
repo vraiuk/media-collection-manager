@@ -48,7 +48,9 @@ describe('uploadFile', () => {
     const ctrl = new AbortController()
     const promise = uploadFile(file, () => {}, ctrl.signal)
     ctrl.abort()
-    await expect(promise).rejects.toMatchObject({ name: 'AbortError' })
+    await expect(promise).rejects.toSatisfy(
+      (err) => err instanceof DOMException && err.name === 'AbortError',
+    )
   })
 
   it('rejects on simulated server error', async () => {

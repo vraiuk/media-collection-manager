@@ -54,7 +54,7 @@ export async function uploadFile(
 
       if (tick >= totalTicks) {
         clearInterval(interval)
-        signal.removeEventListener('abort', abortHandler)
+        // Listener auto-removes due to { once: true } on registration
         if (Math.random() < FAILURE_RATE_UPLOAD) {
           reject(new Error('Upload failed'))
         } else {
