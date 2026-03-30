@@ -1,3 +1,6 @@
+// @vitest-environment node
+// fake-indexeddb/auto + jsdom has a Blob round-trip bug (same as previewCache.test.ts)
+
 import { bench, describe, beforeAll } from 'vitest'
 import 'fake-indexeddb/auto'
 import { previewCache } from './previewCache'
