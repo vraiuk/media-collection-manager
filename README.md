@@ -1,73 +1,60 @@
-# React + TypeScript + Vite
+# Media Collection Manager
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+## Run locally
 
-Currently, two official plugins are available:
-
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
-
-## React Compiler
-
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```
+npm install && npm run dev
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+Opens at http://localhost:5173
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+## Tests
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
 ```
+npm test           # unit + integration (Vitest)
+npm run test:e2e   # e2e (Playwright, starts dev server)
+npm run bench      # performance benchmarks
+```
+
+## Mock API
+
+Custom in-memory mock service (`src/shared/api/mediaApi.ts`). No external tools (no MSW, json-server). Chosen because:
+- Full control over AbortSignal behavior, progress ticks, and failure injection
+- Easy to swap: replace `fetchMediaPage` and `uploadFile` exports with real fetch calls
+- Clearer signal in code review than black-box interceptors
+
+Simulates: 500–1000ms latency, 15% fetch failures, 20% upload failures, incremental progress via setInterval.
+
+## Library choices
+
+| Library | Purpose | Without it |
+|---|---|---|
+| Redux Toolkit | Normalized store, immutable updates, entity adapters | Manual normalization, boilerplate reducers |
+| Tailwind CSS | Utility-first styling | CSS modules or inline styles (slower iteration) |
+| Vitest | Fast unit tests co-located with source | Jest (slower, heavier config) |
+| Playwright | E2E in real browser | Cypress (slower startup, harder CI) |
+| fake-indexeddb | In-memory IndexedDB for tests | Skip IDB tests or use real browser |
+
+No UI kits used (MUI, Chakra, etc.).
+
+## Architecture decisions
+
+**Runtime managers outside Redux:** `AbortController` and thumbnail cancel tokens are not serializable. They live in `uploadRuntime` and `thumbnailRuntime` — plain Maps keyed by item ID. Redux only stores serializable metadata.
+
+**DOM-direct progress updates:** Upload progress never touches Redux. Each `UploadProgress` component registers a callback in `uploadRuntime`. The mock API calls the callback directly, mutating the progress bar's `style.width`. Zero React re-renders during progress ticks.
+
+**IndexedDB over Cache API:** Cache API is designed for request/response pairs. Thumbnail blobs keyed by `fileName + fileSize` map naturally to IDB's key-value store.
+
+**Video thumbnail concurrency limit:** Max 2 concurrent video decodes to avoid browser video pipeline saturation.
+
+## Trade-offs
+
+- `document.pdf` items use a document icon — actual PDF thumbnail generation is out of scope
+- Cache eviction is FIFO by insertion order (IDB cursor) — no timestamp stored
+- Retry flow passes the File object from React state — works for current session only
+
+## What I'd improve with more time
+
+- Worker thread for image thumbnail generation (OffscreenCanvas in worker)
+- Proper LRU with timestamps in IndexedDB
+- Optimistic rollback if upload fails after page reload
