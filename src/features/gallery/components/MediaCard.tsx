@@ -15,7 +15,7 @@ function typeVariant(type: GalleryItem['type']) {
 
 export const MediaCard = memo(function MediaCard({ item, onRemove, uploadJob }: Props) {
   return (
-    <div className="relative bg-surface border border-border rounded-lg overflow-hidden group">
+    <div data-testid="media-card" className="relative bg-surface border border-border rounded-lg overflow-hidden group">
       {/* Thumbnail */}
       <div className="w-full h-40 bg-bg flex items-center justify-center overflow-hidden">
         {item.previewUrl ? (
