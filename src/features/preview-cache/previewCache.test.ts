@@ -8,7 +8,6 @@ import { previewCache } from './previewCache'
 // Reset fake-indexeddb and the module-level connection/URL state between tests.
 // Without this, IDB state (and the singleton dbPromise) bleeds across tests.
 beforeEach(async () => {
-  // @ts-expect-error — replace global IDB with a fresh factory each test
   globalThis.indexedDB = new IDBFactory()
   // Reset the module singleton so the next openDB() gets a fresh connection
   const mod = await import('./previewCache')

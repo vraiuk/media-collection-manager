@@ -58,7 +58,9 @@ describe('uploadFile', () => {
     const file = new File(['x'], 'test.jpg', { type: 'image/jpeg' })
     const ctrl = new AbortController()
     const promise = uploadFile(file, () => {}, ctrl.signal)
+    // Attach rejection handler BEFORE advancing timers so the rejection is never unhandled.
+    const assertion = expect(promise).rejects.toThrow('Upload failed')
     await vi.runAllTimersAsync()
-    await expect(promise).rejects.toThrow('Upload failed')
+    await assertion
   })
 })
