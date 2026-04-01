@@ -32,8 +32,8 @@ export function useUpload() {
       }
 
       // Register controllers
-      for (const { id, ctrl } of jobs) {
-        uploadRuntime.registerController(id, ctrl)
+      for (const { id, file, ctrl } of jobs) {
+        uploadRuntime.registerController(id, ctrl, file)
       }
 
       // Run all concurrently

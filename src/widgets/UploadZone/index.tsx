@@ -43,7 +43,7 @@ export function UploadZone() {
           multiple
           accept="image/jpeg,image/png,image/webp,video/mp4"
           className="hidden"
-          onChange={(e) => void processFiles(e.target.files)}
+          onChange={(e) => { void processFiles(e.target.files); e.target.value = '' }}
         />
       </div>
 

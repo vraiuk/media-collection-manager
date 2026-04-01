@@ -1,9 +1,14 @@
 const controllers = new Map<string, AbortController>()
 const progressCallbacks = new Map<string, (pct: number) => void>()
+const files = new Map<string, File>()
 
 export const uploadRuntime = {
-  registerController(id: string, ctrl: AbortController) {
+  registerController(id: string, ctrl: AbortController, file?: File) {
     controllers.set(id, ctrl)
+    if (file) files.set(id, file)
+  },
+  getFile(id: string): File | undefined {
+    return files.get(id)
   },
   registerProgress(id: string, cb: (pct: number) => void) {
     progressCallbacks.set(id, cb)
@@ -20,6 +25,7 @@ export const uploadRuntime = {
   cleanup(id: string) {
     controllers.delete(id)
     progressCallbacks.delete(id)
+    files.delete(id)
   },
 }
 

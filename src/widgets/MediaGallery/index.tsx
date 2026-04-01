@@ -12,6 +12,7 @@ import { loadNextPage } from '@entities/media'
 import type { FilterType, SortBy } from '@entities/media'
 import { thumbnailRuntime } from '@features/thumbnail/thumbnailRuntime'
 import { uploadRuntime } from '@features/upload/uploadRuntime'
+import { useUpload } from '@features/upload/hooks/useUpload'
 
 export function MediaGallery() {
   const dispatch = useAppDispatch()
@@ -21,9 +22,16 @@ export function MediaGallery() {
   const sentinelRef = useInfiniteScroll()
   const { inputValue, onInputChange, filterType, sortBy, setFilter, setSort } = useFilterControls()
 
+  const { retryUpload } = useUpload()
+
   const handleCancel = useCallback((id: string) => {
     uploadRuntime.abort(id)
   }, [])
+
+  const handleRetry = useCallback((id: string) => {
+    const file = uploadRuntime.getFile(id)
+    if (file) void retryUpload(id, file)
+  }, [retryUpload])
 
   const handleRemove = useCallback((id: string) => {
     // Read previewUrl BEFORE removing from state
@@ -81,7 +89,7 @@ export function MediaGallery() {
       {/* Grid */}
       <div data-testid="media-gallery-grid" className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
         {items.map((item) => (
-          <ItemCard key={item.id} item={item} onRemove={handleRemove} onCancel={handleCancel} />
+          <ItemCard key={item.id} item={item} onRemove={handleRemove} onCancel={handleCancel} onRetry={handleRetry} />
         ))}
       </div>
 
@@ -109,7 +117,7 @@ export function MediaGallery() {
 }
 
 // Separate component to read upload job from store per item
-function ItemCard({ item, onRemove, onCancel }: { item: ReturnType<typeof selectVisibleItems>[number]; onRemove: (id: string) => void; onCancel: (id: string) => void }) {
+function ItemCard({ item, onRemove, onCancel, onRetry }: { item: ReturnType<typeof selectVisibleItems>[number]; onRemove: (id: string) => void; onCancel: (id: string) => void; onRetry: (id: string) => void }) {
   const uploadJob = useAppSelector((state) => selectUploadById(state, item.id))
-  return <MediaCard item={item} onRemove={onRemove} onCancel={onCancel} uploadJob={uploadJob} />
+  return <MediaCard item={item} onRemove={onRemove} onCancel={onCancel} onRetry={onRetry} uploadJob={uploadJob} />
 }

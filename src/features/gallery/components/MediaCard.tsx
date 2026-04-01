@@ -6,6 +6,8 @@ import type { GalleryItem } from '@entities/media'
 interface Props {
   item: GalleryItem
   onRemove: (id: string) => void
+  onCancel?: (id: string) => void
+  onRetry?: (id: string) => void
   uploadJob?: { status: string; error?: string }
 }
 
@@ -13,7 +15,7 @@ function typeVariant(type: GalleryItem['type']) {
   return type as 'image' | 'video' | 'document'
 }
 
-export const MediaCard = memo(function MediaCard({ item, onRemove, uploadJob }: Props) {
+export const MediaCard = memo(function MediaCard({ item, onRemove, onCancel, onRetry, uploadJob }: Props) {
   return (
     <div data-testid="media-card" className="relative bg-surface border border-border rounded-lg overflow-hidden group">
       {/* Thumbnail */}
@@ -39,10 +41,32 @@ export const MediaCard = memo(function MediaCard({ item, onRemove, uploadJob }: 
         {uploadJob && (
           <div className="mt-1">
             {uploadJob.status === 'uploading' && (
-              <UploadProgressBar id={item.id} />
+              <div className="space-y-1">
+                <UploadProgressBar id={item.id} />
+                {onCancel && (
+                  <button
+                    onClick={() => onCancel(item.id)}
+                    className="text-xs text-text-muted hover:text-error"
+                    aria-label={`Cancel upload for ${item.name}`}
+                  >
+                    Cancel
+                  </button>
+                )}
+              </div>
             )}
             {uploadJob.status === 'error' && (
-              <Badge label="Upload failed" variant="error" />
+              <div className="flex items-center gap-2">
+                <Badge label="Upload failed" variant="error" />
+                {onRetry && (
+                  <button
+                    onClick={() => onRetry(item.id)}
+                    className="text-xs text-accent hover:underline"
+                    aria-label={`Retry upload for ${item.name}`}
+                  >
+                    Retry
+                  </button>
+                )}
+              </div>
             )}
             {uploadJob.status === 'cancelled' && (
               <Badge label="Cancelled" variant="default" />
