@@ -30,4 +30,5 @@ function makeItem(index: number): MediaItem {
   }
 }
 
-export const MOCK_DATA: MediaItem[] = Array.from({ length: 60 }, (_, i) => makeItem(i))
+// Reversed so page 1 returns the newest items — natural infinite scroll order
+export const MOCK_DATA: MediaItem[] = Array.from({ length: 60 }, (_, i) => makeItem(59 - i))
