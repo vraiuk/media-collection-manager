@@ -30,6 +30,12 @@ function makeKey(name: string, size: number): string {
 const urlRegistry = new Map<string, string>()
 
 export const previewCache = {
+  // Remove the urlRegistry entry for a cache key when the caller has already
+  // revoked the URL. Keeps the registry in sync after item removal.
+  invalidate(name: string, size: number): void {
+    urlRegistry.delete(makeKey(name, size))
+  },
+
   async get(name: string, size: number): Promise<string | null> {
     const key = makeKey(name, size)
     const cached = urlRegistry.get(key)
@@ -70,14 +76,18 @@ export const previewCache = {
             const cursor = cursorReq.result
             if (cursor) {
               const evictedKey = cursor.key as string
+              const evictedUrl = urlRegistry.get(evictedKey)
               urlRegistry.delete(evictedKey)
+              if (evictedUrl) URL.revokeObjectURL(evictedUrl)
               cursor.delete()
             }
             store.put(blob, key).onsuccess = () => resolve()
           }
           cursorReq.onerror = () => reject(cursorReq.error)
         } else {
-          store.put(blob, key).onsuccess = () => resolve()
+          const putReq = store.put(blob, key)
+          putReq.onsuccess = () => resolve()
+          putReq.onerror = () => reject(putReq.error)
         }
       }
       countReq.onerror = () => reject(countReq.error)

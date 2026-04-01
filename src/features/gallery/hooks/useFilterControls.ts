@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useRef } from 'react'
 import { useAppDispatch, useAppSelector } from '@app/hooks'
 import { setFilterType, setSortBy, setSearchQuery } from '@entities/media'
 import { debounce } from '@shared/lib/debounce'
@@ -10,15 +10,15 @@ export function useFilterControls() {
   const sortBy = useAppSelector((s) => s.ui.sortBy)
   const [inputValue, setInputValue] = useState('')
 
-  const debouncedDispatch = useCallback(
+  // Stable debounced function — created once, not recreated when dispatch changes.
+  const debouncedDispatch = useRef(
     debounce((q: string) => dispatch(setSearchQuery(q)), 300),
-    [dispatch],
-  )
+  ).current
 
   const onInputChange = useCallback((value: string) => {
     setInputValue(value)
     debouncedDispatch(value)
-  }, [debouncedDispatch])
+  }, [])
 
   const setFilter = useCallback((type: FilterType) => dispatch(setFilterType(type)), [dispatch])
   const setSort = useCallback((by: SortBy) => dispatch(setSortBy(by)), [dispatch])

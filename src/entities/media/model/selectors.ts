@@ -30,10 +30,10 @@ const selectFilteredSorted = createSelector(
 // Step 4: search (recomputes only when sorted list or searchQuery changes)
 export const selectVisibleItems = createSelector(
   [selectFilteredSorted, (state: RootState) => state.ui.searchQuery],
-  (items, query) =>
-    query.trim()
-      ? items.filter((i) => i.name.toLowerCase().includes(query.toLowerCase()))
-      : items,
+  (items, query) => {
+    const q = query.trim().toLowerCase()
+    return q ? items.filter((i) => i.name.toLowerCase().includes(q)) : items
+  },
 )
 
 export const selectHasMore = (state: RootState) => state.media.pagination.hasMore

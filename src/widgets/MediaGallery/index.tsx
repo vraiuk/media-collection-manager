@@ -1,4 +1,4 @@
-import { useCallback } from 'react'
+import { memo, useCallback } from 'react'
 import { useAppDispatch, useAppSelector } from '@app/hooks'
 import { selectVisibleItems, selectLoadState, selectHasMore, removeItem, removeUploadJob } from '@entities/media'
 import { selectUploadById } from '@entities/media'
@@ -13,6 +13,14 @@ import type { FilterType, SortBy } from '@entities/media'
 import { thumbnailRuntime } from '@features/thumbnail/thumbnailRuntime'
 import { uploadRuntime } from '@features/upload/uploadRuntime'
 import { useUpload } from '@features/upload/hooks/useUpload'
+import { previewCache } from '@features/preview-cache/previewCache'
+
+const FILTER_BUTTONS: { label: string; value: FilterType }[] = [
+  { label: 'All', value: 'all' },
+  { label: 'Image', value: 'image' },
+  { label: 'Video', value: 'video' },
+  { label: 'Document', value: 'document' },
+]
 
 export function MediaGallery() {
   const dispatch = useAppDispatch()
@@ -38,26 +46,22 @@ export function MediaGallery() {
     const item = store.getState().media.entities[id]
     thumbnailRuntime.cancel(id)
     uploadRuntime.abort(id)
-    if (item?.previewUrl) URL.revokeObjectURL(item.previewUrl)
+    if (item?.previewUrl) {
+      URL.revokeObjectURL(item.previewUrl)
+      previewCache.invalidate(item.name, item.size)
+    }
     uploadRuntime.cleanup(id)
     thumbnailRuntime.cleanup(id)
     dispatch(removeItem(id))
     dispatch(removeUploadJob(id))
   }, [dispatch])
 
-  const filterButtons: { label: string; value: FilterType }[] = [
-    { label: 'All', value: 'all' },
-    { label: 'Image', value: 'image' },
-    { label: 'Video', value: 'video' },
-    { label: 'Document', value: 'document' },
-  ]
-
   return (
     <div className="space-y-4">
       {/* Controls */}
       <div className="flex flex-wrap items-center gap-3">
         <div className="flex gap-1">
-          {filterButtons.map(({ label, value }) => (
+          {FILTER_BUTTONS.map(({ label, value }) => (
             <Button
               key={value}
               size="sm"
@@ -121,7 +125,7 @@ export function MediaGallery() {
 }
 
 // Separate component to read upload job from store per item
-function ItemCard({ item, onRemove, onCancel, onRetry }: { item: ReturnType<typeof selectVisibleItems>[number]; onRemove: (id: string) => void; onCancel: (id: string) => void; onRetry: (id: string) => void }) {
+const ItemCard = memo(function ItemCard({ item, onRemove, onCancel, onRetry }: { item: ReturnType<typeof selectVisibleItems>[number]; onRemove: (id: string) => void; onCancel: (id: string) => void; onRetry: (id: string) => void }) {
   const uploadJob = useAppSelector((state) => selectUploadById(state, item.id))
   return <MediaCard item={item} onRemove={onRemove} onCancel={onCancel} onRetry={onRetry} uploadJob={uploadJob} />
-}
+})

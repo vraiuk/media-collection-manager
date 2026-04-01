@@ -65,7 +65,7 @@ const mediaSlice = createSlice({
         state.pagination.loadState = { status: 'success' }
       })
       .addCase(loadNextPage.rejected, (state, action) => {
-        if (action.payload === 'skip') return
+        if (action.meta.condition) return
         const page = state.pagination.nextPage ?? 1
         state.pagination.loadState = {
           status: 'error',

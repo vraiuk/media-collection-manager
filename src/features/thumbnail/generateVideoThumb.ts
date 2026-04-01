@@ -30,8 +30,11 @@ export async function generateVideoThumb(
     if (token.cancelled) return ''
 
     video.currentTime = 0
-    await new Promise<void>((resolve) => {
-      video.addEventListener('seeked', () => resolve(), { once: true })
+    await new Promise<void>((resolve, reject) => {
+      const timeout = setTimeout(() => reject(new Error('Seek timeout')), 5000)
+      const cleanup = () => clearTimeout(timeout)
+      video.addEventListener('seeked', () => { cleanup(); resolve() }, { once: true })
+      video.addEventListener('error', () => { cleanup(); reject(new Error('Seek error')) }, { once: true })
     })
 
     if (token.cancelled) return ''
