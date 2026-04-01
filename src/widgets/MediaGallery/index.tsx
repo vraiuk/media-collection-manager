@@ -93,6 +93,10 @@ export function MediaGallery() {
         ))}
       </div>
 
+      {items.length === 0 && loadState.status !== 'loading' && (
+        <p className="text-center text-text-muted text-sm py-12">No items found</p>
+      )}
+
       {/* Sentinel + states — fixed height to prevent layout shift */}
       <div className="h-16 flex items-center justify-center">
         {loadState.status === 'loading' && <Spinner />}

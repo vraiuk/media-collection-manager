@@ -51,7 +51,11 @@ No UI kits used (MUI, Chakra, etc.).
 
 - `document.pdf` items use a document icon — actual PDF thumbnail generation is out of scope
 - Cache eviction is FIFO by insertion order (IDB cursor) — no timestamp stored
-- Retry flow passes the File object from React state — works for current session only
+- Retry flow stores the File object in `uploadRuntime` — available for the current session only, lost on page refresh
+
+## Loom demo
+
+<!-- TODO: add Loom link here before submission -->
 
 ## What I'd improve with more time
 
