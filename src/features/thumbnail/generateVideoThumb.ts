@@ -29,7 +29,7 @@ export async function generateVideoThumb(
 
     if (token.cancelled) return ''
 
-    video.currentTime = 0
+    video.currentTime = 0.001
     await new Promise<void>((resolve, reject) => {
       const timeout = setTimeout(() => reject(new Error('Seek timeout')), 5000)
       const cleanup = () => clearTimeout(timeout)
