@@ -23,14 +23,17 @@ const initialState = mediaAdapter.getInitialState({ pagination: initialPaginatio
 
 export const loadNextPage = createAsyncThunk(
   'media/loadNextPage',
-  async (_, { getState, rejectWithValue }) => {
+  async (_, { getState }) => {
     const state = getState() as RootState
-    const { pagination } = state.media
-    if (pagination.loadState.status === 'loading' || !pagination.hasMore) {
-      return rejectWithValue('skip')
-    }
-    const page = pagination.nextPage ?? 1
+    const page = state.media.pagination.nextPage ?? 1
     return fetchMediaPage(page)
+  },
+  {
+    condition: (_, { getState }) => {
+      const state = getState() as RootState
+      const { pagination } = state.media
+      return pagination.loadState.status !== 'loading' && pagination.hasMore
+    },
   },
 )
 
