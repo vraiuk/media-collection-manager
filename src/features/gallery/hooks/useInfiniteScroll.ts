@@ -3,6 +3,8 @@ import { useAppDispatch, useAppSelector } from '@app/hooks'
 import { loadNextPage } from '@entities/media'
 import { selectLoadState, selectHasMore } from '@entities/media'
 
+const RETRY_DELAY_MS = 2000
+
 export function useInfiniteScroll() {
   const dispatch = useAppDispatch()
   const loadState = useAppSelector(selectLoadState)
@@ -13,14 +15,14 @@ export function useInfiniteScroll() {
   loadStateRef.current = loadState
   hasMoreRef.current = hasMore
 
+  // Observer triggers load when sentinel enters viewport
   useEffect(() => {
     const sentinel = sentinelRef.current
     if (!sentinel) return
 
     const observer = new IntersectionObserver(
       (entries) => {
-        const entry = entries[0]
-        if (!entry?.isIntersecting) return
+        if (!entries[0]?.isIntersecting) return
         if (loadStateRef.current.status === 'loading' || loadStateRef.current.status === 'error' || !hasMoreRef.current) return
         void dispatch(loadNextPage())
       },
@@ -30,6 +32,13 @@ export function useInfiniteScroll() {
     observer.observe(sentinel)
     return () => observer.disconnect()
   }, [dispatch])
+
+  // Auto-retry after delay when a page load fails
+  useEffect(() => {
+    if (loadState.status !== 'error' || !hasMore) return
+    const timer = setTimeout(() => void dispatch(loadNextPage()), RETRY_DELAY_MS)
+    return () => clearTimeout(timer)
+  }, [dispatch, loadState.status, hasMore])
 
   return sentinelRef
 }
