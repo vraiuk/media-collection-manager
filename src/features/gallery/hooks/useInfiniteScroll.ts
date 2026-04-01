@@ -21,7 +21,7 @@ export function useInfiniteScroll() {
       (entries) => {
         const entry = entries[0]
         if (!entry?.isIntersecting) return
-        if (loadStateRef.current.status === 'loading' || !hasMoreRef.current) return
+        if (loadStateRef.current.status === 'loading' || loadStateRef.current.status === 'error' || !hasMoreRef.current) return
         void dispatch(loadNextPage())
       },
       { rootMargin: '200px' },
