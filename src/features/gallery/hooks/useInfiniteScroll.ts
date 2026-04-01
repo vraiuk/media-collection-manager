@@ -15,7 +15,7 @@ export function useInfiniteScroll() {
   loadStateRef.current = loadState
   hasMoreRef.current = hasMore
 
-  // Observer triggers load when sentinel enters viewport
+  // Observer triggers load when sentinel scrolls into viewport
   useEffect(() => {
     const sentinel = sentinelRef.current
     if (!sentinel) return
@@ -32,6 +32,17 @@ export function useInfiniteScroll() {
     observer.observe(sentinel)
     return () => observer.disconnect()
   }, [dispatch])
+
+  // After each successful load, keep loading if sentinel is still visible
+  useEffect(() => {
+    if (loadState.status !== 'success' || !hasMore) return
+    const sentinel = sentinelRef.current
+    if (!sentinel) return
+    const rect = sentinel.getBoundingClientRect()
+    if (rect.top <= window.innerHeight + 200) {
+      void dispatch(loadNextPage())
+    }
+  }, [dispatch, loadState.status, hasMore])
 
   // Auto-retry after delay when a page load fails
   useEffect(() => {
