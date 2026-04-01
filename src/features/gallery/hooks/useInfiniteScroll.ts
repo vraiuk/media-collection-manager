@@ -8,6 +8,10 @@ export function useInfiniteScroll() {
   const loadState = useAppSelector(selectLoadState)
   const hasMore = useAppSelector(selectHasMore)
   const sentinelRef = useRef<HTMLDivElement>(null)
+  const loadStateRef = useRef(loadState)
+  const hasMoreRef = useRef(hasMore)
+  loadStateRef.current = loadState
+  hasMoreRef.current = hasMore
 
   useEffect(() => {
     const sentinel = sentinelRef.current
@@ -17,7 +21,7 @@ export function useInfiniteScroll() {
       (entries) => {
         const entry = entries[0]
         if (!entry?.isIntersecting) return
-        if (loadState.status === 'loading' || !hasMore) return
+        if (loadStateRef.current.status === 'loading' || !hasMoreRef.current) return
         void dispatch(loadNextPage())
       },
       { rootMargin: '200px' },
@@ -25,7 +29,7 @@ export function useInfiniteScroll() {
 
     observer.observe(sentinel)
     return () => observer.disconnect()
-  }, [dispatch, loadState.status, hasMore])
+  }, [dispatch])
 
   return sentinelRef
 }

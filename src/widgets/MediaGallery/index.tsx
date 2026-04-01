@@ -21,6 +21,10 @@ export function MediaGallery() {
   const sentinelRef = useInfiniteScroll()
   const { inputValue, onInputChange, filterType, sortBy, setFilter, setSort } = useFilterControls()
 
+  const handleCancel = useCallback((id: string) => {
+    uploadRuntime.abort(id)
+  }, [])
+
   const handleRemove = useCallback((id: string) => {
     // Read previewUrl BEFORE removing from state
     const item = store.getState().media.entities[id]
@@ -77,27 +81,27 @@ export function MediaGallery() {
       {/* Grid */}
       <div data-testid="media-gallery-grid" className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
         {items.map((item) => (
-          <ItemCard key={item.id} item={item} onRemove={handleRemove} />
+          <ItemCard key={item.id} item={item} onRemove={handleRemove} onCancel={handleCancel} />
         ))}
       </div>
 
-      {/* Sentinel + states */}
-      {loadState.status === 'loading' && (
-        <div className="flex justify-center py-6"><Spinner /></div>
-      )}
+      {/* Sentinel + states — fixed height to prevent layout shift */}
+      <div className="h-16 flex items-center justify-center">
+        {loadState.status === 'loading' && <Spinner />}
 
-      {loadState.status === 'error' && (
-        <div className="flex items-center gap-3 p-4 bg-error/10 border border-error/30 rounded-lg">
-          <span className="text-error text-sm">Failed to load items</span>
-          <Button size="sm" variant="danger" onClick={() => dispatch(loadNextPage())}>
-            Retry
-          </Button>
-        </div>
-      )}
+        {loadState.status === 'error' && (
+          <div className="flex items-center gap-3">
+            <span className="text-error text-sm">Failed to load items</span>
+            <Button size="sm" variant="danger" onClick={() => dispatch(loadNextPage())}>
+              Retry
+            </Button>
+          </div>
+        )}
 
-      {!hasMore && loadState.status !== 'loading' && (
-        <p className="text-center text-text-muted text-sm py-4">You've seen it all</p>
-      )}
+        {!hasMore && loadState.status !== 'loading' && (
+          <p className="text-text-muted text-sm">You've seen it all</p>
+        )}
+      </div>
 
       <div ref={sentinelRef} aria-hidden="true" />
     </div>
@@ -105,7 +109,7 @@ export function MediaGallery() {
 }
 
 // Separate component to read upload job from store per item
-function ItemCard({ item, onRemove }: { item: ReturnType<typeof selectVisibleItems>[number]; onRemove: (id: string) => void }) {
+function ItemCard({ item, onRemove, onCancel }: { item: ReturnType<typeof selectVisibleItems>[number]; onRemove: (id: string) => void; onCancel: (id: string) => void }) {
   const uploadJob = useAppSelector((state) => selectUploadById(state, item.id))
-  return <MediaCard item={item} onRemove={onRemove} uploadJob={uploadJob} />
+  return <MediaCard item={item} onRemove={onRemove} onCancel={onCancel} uploadJob={uploadJob} />
 }
