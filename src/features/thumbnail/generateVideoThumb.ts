@@ -1,7 +1,6 @@
 import { previewCache } from '@features/preview-cache/previewCache'
+import { renderThumbBlob } from './renderThumbBlob'
 import type { CancelToken } from './generateImageThumb'
-
-const THUMB_SIZE = 200
 
 export async function generateVideoThumb(
   file: File,
@@ -39,18 +38,9 @@ export async function generateVideoThumb(
 
     if (token.cancelled) return ''
 
-    const canvas = document.createElement('canvas')
-    canvas.width = THUMB_SIZE
-    canvas.height = THUMB_SIZE
-    const ctx = canvas.getContext('2d')!
+    const blob = await renderThumbBlob(video, video.videoWidth || 200, video.videoHeight || 200)
 
-    const scale = Math.min(THUMB_SIZE / (video.videoWidth || THUMB_SIZE), THUMB_SIZE / (video.videoHeight || THUMB_SIZE))
-    const w = (video.videoWidth || THUMB_SIZE) * scale
-    const h = (video.videoHeight || THUMB_SIZE) * scale
-    ctx.drawImage(video, (THUMB_SIZE - w) / 2, (THUMB_SIZE - h) / 2, w, h)
-
-    const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, 'image/webp', 0.8))
-    if (!blob || token.cancelled) return ''
+    if (token.cancelled) return ''
 
     const thumbUrl = URL.createObjectURL(blob)
     previewCache.set(file.name, file.size, blob).catch(() => {})

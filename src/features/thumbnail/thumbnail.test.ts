@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, afterEach } from 'vitest'
+import { renderThumbBlob } from './renderThumbBlob'
 import { generateImageThumb } from './generateImageThumb'
 import { generateVideoThumb } from './generateVideoThumb'
 
@@ -26,6 +27,29 @@ const createdUrls: string[] = []
 vi.stubGlobal('URL', {
   createObjectURL: (b: Blob) => { const u = `blob:fake-${Date.now()}`; createdUrls.push(u); return u },
   revokeObjectURL: (u: string) => { const i = createdUrls.indexOf(u); if (i >= 0) createdUrls.splice(i, 1) },
+})
+
+describe('renderThumbBlob', () => {
+  afterEach(() => {
+    mockConvertToBlob.mockClear()
+  })
+
+  it('returns a webp blob from a CanvasImageSource', async () => {
+    const source = { width: 400, height: 300 } as unknown as ImageBitmap
+    const blob = await renderThumbBlob(source, 400, 300)
+    expect(blob).toBeInstanceOf(Blob)
+    expect(blob.type).toBe('image/webp')
+  })
+
+  it('calls drawImage on the canvas context', async () => {
+    const drawImage = vi.fn()
+    const origGetContext = MockOffscreenCanvas.prototype.getContext
+    MockOffscreenCanvas.prototype.getContext = () => ({ drawImage, fillRect: vi.fn() })
+    const source = { width: 200, height: 200 } as unknown as ImageBitmap
+    await renderThumbBlob(source, 200, 200)
+    expect(drawImage).toHaveBeenCalledOnce()
+    MockOffscreenCanvas.prototype.getContext = origGetContext
+  })
 })
 
 describe('generateImageThumb', () => {
@@ -105,18 +129,6 @@ describe('generateVideoThumb', () => {
     }
     vi.spyOn(document, 'createElement').mockReturnValueOnce(mockVideo as any)
     vi.spyOn(document.body, 'appendChild').mockImplementationOnce(() => mockVideo as any)
-
-    // Mock canvas — second createElement call
-    const mockCtx = { drawImage: vi.fn() }
-    const mockCanvas = {
-      width: 0,
-      height: 0,
-      getContext: vi.fn(() => mockCtx),
-      toBlob: vi.fn((cb: (b: Blob | null) => void) =>
-        cb(new Blob(['fake-video-thumb'], { type: 'image/webp' })),
-      ),
-    }
-    vi.spyOn(document, 'createElement').mockReturnValueOnce(mockCanvas as any)
 
     const url = await generateVideoThumb(file, token)
     expect(url).toMatch(/^blob:/)
