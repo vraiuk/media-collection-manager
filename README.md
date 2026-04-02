@@ -54,8 +54,7 @@ No UI kits used (MUI, Chakra, etc.).
 - Retry flow stores the File object in `uploadRuntime` — available for the current session only, lost on page refresh
 
 ## Loom demo
-
-<!-- TODO: add Loom link here before submission -->
+https://www.loom.com/share/49919ef332444a599a3a31062f58b121
 
 ## What I'd improve with more time
 
